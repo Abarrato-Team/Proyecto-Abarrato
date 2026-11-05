@@ -6,6 +6,7 @@ Para las familias y pequeños comerciantes que sufren la pérdida de poder adqui
 **Equipo de Desarrollo:**
 * Lucas Lara Fuentes - [@lucaslarafuentes-dotcom](https://github.com/lucaslarafuentes-dotcom)
 * Valentina Lara Menares - [@seesawgi](https://github.com/seesawgi)
+* Matías Quezada Plaza - [@schulermitangst](https://github.com/Schulermitangst)
 
 **Enlaces del Hito 1:**
 *  [Prototipo Navegable](https://lucaslarafuentes-dotcom.github.io/Proyecto-Abarrato/Prototipo.html)
