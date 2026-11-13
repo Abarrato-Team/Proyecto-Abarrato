@@ -110,6 +110,15 @@ public enum Comercio {
         return null;
     }
 
+    /** URL de la página siguiente de una búsqueda, o null si la tienda no la ofrece. */
+    String urlBusquedaPagina(String urlBusqueda, int pagina) {
+        return switch (this) {
+            case JUMBO, SANTA_ISABEL, LIDER -> urlBusqueda.contains("/busqueda?") || urlBusqueda.contains("/search?")
+                    ? urlBusqueda + "&page=" + pagina : null;
+            default -> null;
+        };
+    }
+
     String rutaRubro(Rubro rubro) {
         return switch (this) {
             case JUMBO, SANTA_ISABEL -> switch (rubro) {

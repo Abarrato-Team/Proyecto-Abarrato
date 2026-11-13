@@ -28,6 +28,7 @@ final class CatalogoEnVivo {
     private static final Duration VIGENCIA = Duration.ofMinutes(2);
     private static final Duration REINTENTO = Duration.ofSeconds(45);
     private static final int MAX_BUSQUEDAS_GUARDADAS = 160;
+    private static final int PAGINAS_BUSQUEDA = entero("ABARRATO_PAGINAS_BUSQUEDA", 2, 1, 4);
     private static final List<Comercio> COMERCIOS = List.of(Comercio.values());
     private static final List<String> BUSQUEDAS_PROGRAMADAS = List.of(
             "arroz", "spaghetti", "aceite", "huevos", "pollo", "detergente");
@@ -72,6 +73,9 @@ final class CatalogoEnVivo {
                 .replaceAll("\\b(aceite|conserva|detergente|fiambre|fideo|helado|huevo|jugo|mantequilla|"
                         + "mermelada|pasta|queso)s\\b", "$1")
                 .split(" ");
+        for (int i = 0; i < palabras.length; i++) {
+            palabras[i] = EquivalenciaProductos.raiz(palabras[i]);
+        }
         List<Captura> capturas = conRespaldo(capturarCatalogos(List.of(termino), comercios), palabras);
         return agrupar(capturas, precio -> {
             String nombre = variantes(normalizar(precio.nombre()));
@@ -210,6 +214,13 @@ final class CatalogoEnVivo {
                     String url = comercio.urlBusqueda(consulta);
                     if (url != null && !url.equals(comercio.catalogo())) {
                         pendientes.add(buscar(comercio, url));
+                        // Más resultados: páginas siguientes del buscador (ABARRATO_PAGINAS_BUSQUEDA, 1 a 4).
+                        for (int pagina = 2; pagina <= PAGINAS_BUSQUEDA; pagina++) {
+                            String siguiente = comercio.urlBusquedaPagina(url, pagina);
+                            if (siguiente != null) {
+                                pendientes.add(buscar(comercio, siguiente));
+                            }
+                        }
                     }
                 }
             }

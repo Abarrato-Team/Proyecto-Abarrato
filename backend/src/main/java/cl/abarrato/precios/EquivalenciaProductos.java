@@ -24,6 +24,9 @@ final class EquivalenciaProductos {
             "natural", "caja", "bolsa", "botella", "tarro", "sachet", "envase", "lata", "frasco",
             "unidad", "unidades", "un", "und", "formato", "dp", "c", "u");
 
+    private static final Set<String> UNIDADES = Set.of(
+            "l", "lt", "lts", "litro", "litros", "ml", "cc", "g", "gr", "grs", "gramos", "kg", "kilo", "kilos");
+
     record Firma(String medida, List<String> palabras, String compacto) {}
 
     private EquivalenciaProductos() {}
@@ -35,11 +38,13 @@ final class EquivalenciaProductos {
         Matcher m = MEDIDA.matcher(texto);
         if (m.find()) {
             medida = medida(m.group(1), m.group(2));
-            texto = texto.substring(0, m.start()) + " " + texto.substring(m.end());
         }
+        // Algunas tiendas repiten el formato ("1L 1 L"): se quitan todas las medidas del nombre.
+        texto = MEDIDA.matcher(texto).replaceAll(" ");
         List<String> palabras = new ArrayList<>();
         for (String palabra : texto.split("[^a-z0-9]+")) {
-            if (!palabra.isEmpty() && !RELLENO.contains(palabra) && !palabra.matches("\\d+")) {
+            if (palabra.length() > 1 && !RELLENO.contains(palabra) && !UNIDADES.contains(palabra)
+                    && !palabra.matches("\\d+")) {
                 palabras.add(palabra);
             }
         }
@@ -78,6 +83,23 @@ final class EquivalenciaProductos {
             }
         }
         return false;
+    }
+
+    /**
+     * Raíz de una palabra buscada, para que "tomates" encuentre "Tomate" y "proteina" encuentre
+     * "protein": se quita el plural y, en palabras largas, la vocal final.
+     */
+    static String raiz(String palabra) {
+        String raiz = palabra;
+        if (raiz.length() > 4 && raiz.endsWith("es") && !raiz.endsWith("ees")) {
+            raiz = raiz.substring(0, raiz.length() - 2);
+        } else if (raiz.length() > 4 && raiz.endsWith("s")) {
+            raiz = raiz.substring(0, raiz.length() - 1);
+        }
+        if (raiz.length() >= 6 && "aeo".indexOf(raiz.charAt(raiz.length() - 1)) >= 0) {
+            raiz = raiz.substring(0, raiz.length() - 1);
+        }
+        return raiz;
     }
 
     private static String medida(String numero, String unidad) {
