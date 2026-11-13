@@ -70,11 +70,49 @@ final class CatalogoEnVivo {
                 .replaceAll("\\b(aceite|conserva|detergente|fiambre|fideo|helado|huevo|jugo|mantequilla|"
                         + "mermelada|pasta|queso)s\\b", "$1")
                 .split(" ");
-        List<Captura> capturas = capturarCatalogos(List.of(termino), comercios);
+        List<Captura> capturas = conRespaldo(capturarCatalogos(List.of(termino), comercios), palabras);
         return agrupar(capturas, precio -> {
             String nombre = variantes(normalizar(precio.nombre()));
             return Arrays.stream(palabras).allMatch(nombre::contains);
         });
+    }
+
+    /**
+     * Si una cadena no responde (por ejemplo, porque bloquea servidores fuera de Chile), usa los
+     * últimos precios guardados en la base de datos para esa cadena. Se marcan como ULTIMA_CAPTURA.
+     */
+    private List<Captura> conRespaldo(List<Captura> capturas, String[] palabras) {
+        var sinRespuesta = new java.util.LinkedHashSet<Comercio>();
+        var conRespuesta = java.util.EnumSet.noneOf(Comercio.class);
+        for (Captura captura : capturas) {
+            if ("NO_DISPONIBLE".equals(captura.fuente.estado)) {
+                sinRespuesta.add(captura.fuente.comercio);
+            } else {
+                conRespuesta.add(captura.fuente.comercio);
+            }
+        }
+        sinRespuesta.removeAll(conRespuesta);
+        if (sinRespuesta.isEmpty() || palabras.length == 0 || palabras[0].isBlank()) {
+            return capturas;
+        }
+        List<ObservacionPrecio> guardadas;
+        try {
+            guardadas = servicio.buscarCatalogo(palabras[0]);
+        } catch (RuntimeException error) {
+            LOG.warn("No se pudieron leer los precios guardados ({})", error.getClass().getSimpleName());
+            return capturas;
+        }
+        var resultado = new java.util.ArrayList<>(capturas);
+        for (Comercio comercio : sinRespuesta) {
+            List<ObservacionPrecio> deLaCadena = guardadas.stream()
+                    .filter(precio -> precio.comercio() == comercio).toList();
+            if (!deLaCadena.isEmpty()) {
+                OffsetDateTime ultima = deLaCadena.stream().map(ObservacionPrecio::observadoEn)
+                        .max(Comparator.naturalOrder()).orElse(null);
+                resultado.add(new Captura(new Fuente(comercio, "ULTIMA_CAPTURA", ultima), deLaCadena, Instant.now()));
+            }
+        }
+        return resultado;
     }
 
     Consulta consultarRubro(Comercio.Rubro rubro, Comercio filtro) {
@@ -250,7 +288,8 @@ final class CatalogoEnVivo {
             Fuente fuente = new Fuente(comercio, "RECIENTE", precios.get(0).observadoEn());
             return new Captura(fuente, precios, Instant.now().plus(VIGENCIA));
         } catch (IOException | RuntimeException error) {
-            LOG.warn("{}: captura a demanda falló ({})", comercio, error.getClass().getSimpleName());
+            LOG.warn("{}: captura a demanda falló ({}: {})", comercio, error.getClass().getSimpleName(),
+                    error.getMessage());
             if (anterior == null) {
                 return new Captura(new Fuente(comercio, "NO_DISPONIBLE", null),
                         List.of(), Instant.now().plus(REINTENTO));
