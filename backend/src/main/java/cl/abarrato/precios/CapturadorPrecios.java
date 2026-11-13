@@ -55,7 +55,45 @@ final class CapturadorPrecios {
     }
 
     List<ObservacionPrecio> capturarPagina(Comercio comercio, String url) throws IOException {
+        if (comercio == Comercio.DEL_PEDREGAL && url.startsWith(Comercio.CATALOGO_PEDREGAL)) {
+            return catalogoPedregal();
+        }
         return extractor.extraer(comercio, descargar(url), ahora());
+    }
+
+    /** Recorre las páginas de products.json de Del Pedregal (250 productos por página). */
+    private List<ObservacionPrecio> catalogoPedregal() throws IOException {
+        List<ObservacionPrecio> precios = new ArrayList<>();
+        OffsetDateTime instante = ahora();
+        for (int pagina = 1; pagina <= 12; pagina++) {
+            List<ObservacionPrecio> lote = extractor.pedregalJson(
+                    descargarTexto(Comercio.CATALOGO_PEDREGAL + "&page=" + pagina), instante);
+            if (lote.isEmpty()) {
+                break;
+            }
+            precios.addAll(lote);
+        }
+        if (precios.isEmpty()) {
+            throw new IOException("El catálogo de Del Pedregal no contiene precios reconocibles");
+        }
+        return List.copyOf(precios);
+    }
+
+    String descargarTexto(String url) throws IOException {
+        var solicitud = Jsoup.connect(url)
+                .userAgent("AbarratoPriceBot/0.2")
+                .ignoreContentType(true)
+                .followRedirects(false)
+                .timeout(TIEMPO_ESPERA_MS)
+                .maxBodySize(5 * 1024 * 1024);
+        if (!proxyHost.isBlank()) {
+            solicitud.proxy(proxyHost, proxyPuerto);
+        }
+        var respuesta = solicitud.execute();
+        if (respuesta.statusCode() != 200) {
+            throw new IOException("HTTP " + respuesta.statusCode());
+        }
+        return respuesta.body();
     }
 
     Document descargar(String url) throws IOException {

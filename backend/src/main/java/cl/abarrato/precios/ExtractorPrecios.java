@@ -39,7 +39,10 @@ class ExtractorPrecios {
             case DEL_PEDREGAL -> RecolectorPedregal.extraer(pagina, instante);
             case JUMBO, SANTA_ISABEL -> cencosud(comercio, pagina, instante);
             case TOTTUS -> tottus(pagina, instante);
-            case LIDER -> lider(pagina, instante);
+            case LIDER -> {
+                List<ObservacionPrecio> busqueda = liderBusqueda(pagina, instante);
+                yield busqueda.isEmpty() ? lider(pagina, instante) : busqueda;
+            }
             case ALVI -> alvi(pagina, instante);
             case UNIMARC -> unimarc(pagina, instante);
             case CUGAT -> cugat(pagina, instante);
@@ -182,6 +185,73 @@ class ExtractorPrecios {
             // Las tarjetas visibles siguen teniendo sus propios precios.
         }
         return fichas;
+    }
+
+    /** Resultados del buscador www.lider.cl: props.pageProps.initialData.searchResult.itemStacks[].items[]. */
+    private List<ObservacionPrecio> liderBusqueda(Document pagina, OffsetDateTime instante) throws IOException {
+        Element datos = pagina.selectFirst("script#__NEXT_DATA__");
+        if (datos == null) {
+            return List.of();
+        }
+        List<ObservacionPrecio> precios = new ArrayList<>();
+        JsonNode pilas = json.readTree(datos.data()).at("/props/pageProps/initialData/searchResult/itemStacks");
+        for (JsonNode pila : pilas) {
+            for (JsonNode producto : pila.path("items")) {
+                String id = producto.path("usItemId").asText(producto.path("id").asText());
+                String nombre = producto.path("name").asText().strip();
+                String ruta = producto.path("canonicalUrl").asText();
+                String disponibilidad = producto.path("availabilityStatusV2").path("value").asText();
+                String texto = producto.path("priceInfo").path("linePrice").asText();
+                if (texto.isBlank()) {
+                    texto = producto.path("priceInfo").path("itemPrice").asText();
+                }
+                int monto = monto(texto);
+                if (monto <= 0 || nombre.isEmpty() || !id.matches("[A-Za-z0-9]{1,40}")
+                        || !ruta.matches("/ip/[^\\s?#]{1,300}")
+                        || (!disponibilidad.isEmpty() && !"IN_STOCK".equals(disponibilidad))) {
+                    continue;
+                }
+                precios.add(observacion(Comercio.LIDER, id, nombre, texto, monto, "https://www.lider.cl" + ruta,
+                        instante, IdentidadProducto.codigoBarras(id),
+                        ImagenProducto.validar(producto.path("imageInfo").path("thumbnailUrl").asText())));
+            }
+        }
+        return precios;
+    }
+
+    /** Catálogo JSON de Shopify de Del Pedregal: products[].variants[].price. */
+    List<ObservacionPrecio> pedregalJson(String texto, OffsetDateTime instante) throws IOException {
+        List<ObservacionPrecio> precios = new ArrayList<>();
+        for (JsonNode producto : json.readTree(texto).path("products")) {
+            String handle = producto.path("handle").asText();
+            String nombre = producto.path("title").asText().strip();
+            if (!handle.matches("[a-z0-9-]{1,120}") || nombre.isEmpty()) {
+                continue;
+            }
+            for (JsonNode variante : producto.path("variants")) {
+                if (!variante.path("available").asBoolean(false)) {
+                    continue;
+                }
+                int monto;
+                try {
+                    monto = (int) Math.round(Double.parseDouble(variante.path("price").asText()));
+                } catch (NumberFormatException error) {
+                    continue;
+                }
+                if (monto <= 0) {
+                    continue;
+                }
+                String imagen = ImagenProducto.validar(producto.path("images").path(0).path("src").asText());
+                precios.add(observacion(Comercio.DEL_PEDREGAL, handle, nombre, pesos(monto), monto,
+                        "https://alimentosdelpedregal.com/products/" + handle, instante, null, imagen));
+                break;
+            }
+        }
+        return precios;
+    }
+
+    private static String pesos(int monto) {
+        return "$" + String.format(java.util.Locale.ROOT, "%,d", monto).replace(',', '.');
     }
 
     private List<ObservacionPrecio> lider(Document pagina, OffsetDateTime instante) {

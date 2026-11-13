@@ -70,7 +70,17 @@ public enum Comercio {
         return catalogo;
     }
 
+    static final String CATALOGO_PEDREGAL = "https://alimentosdelpedregal.com/products.json?limit=250";
+
     String urlBusqueda(String consulta) {
+        if (this == LIDER) {
+            // Buscador público de Líder: los resultados vienen en el bloque __NEXT_DATA__ de la página.
+            return "https://www.lider.cl/search?q=" + URLEncoder.encode(consulta, StandardCharsets.UTF_8);
+        }
+        if (this == DEL_PEDREGAL) {
+            // Tienda Shopify: se lee el catálogo completo en JSON y se filtra por las palabras buscadas.
+            return CATALOGO_PEDREGAL;
+        }
         Rubro rubroExacto = RUBROS.get(consulta);
         if (rubroExacto != null) {
             String ruta = rutaRubro(rubroExacto);

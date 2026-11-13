@@ -8,7 +8,7 @@ import org.jsoup.nodes.Element;
 final class ImagenProducto {
     private static final Set<String> CDN = Set.of(
             "jumbocl.vteximg.com.br", "santaisabel.vteximg.com.br", "media.tottus.cl",
-            "i5.walmartimages.cl", "unimarc.vtexassets.com", "alvicl.vteximg.com.br", "alvicl.vtexassets.com",
+            "i5.walmartimages.cl", "i5.walmartimages.com", "unimarc.vtexassets.com", "alvicl.vteximg.com.br", "alvicl.vtexassets.com",
             "alimentosdelpedregal.com", "cdn.shopify.com", "cugat.cl");
 
     private ImagenProducto() {}
