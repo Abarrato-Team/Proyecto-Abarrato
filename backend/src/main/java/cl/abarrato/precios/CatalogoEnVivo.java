@@ -148,7 +148,7 @@ final class CatalogoEnVivo {
                 .stream()
                 .sorted(Comparator.comparingLong(this::tiendasRecientes).reversed()
                         .thenComparing(producto -> normalizar(producto.nombre)))
-                .limit(150).toList();
+                .limit(250).toList();
         return new Consulta(productos, fuentes(capturas));
     }
 
