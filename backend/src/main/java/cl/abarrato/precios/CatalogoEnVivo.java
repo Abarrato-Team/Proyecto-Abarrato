@@ -140,11 +140,11 @@ final class CatalogoEnVivo {
                 }
             }
         }
-        List<Producto> productos = grupos.values().stream()
-                .map(this::producto)
+        List<Producto> productos = fusionarEquivalentes(grupos.values().stream().map(this::producto).toList())
+                .stream()
                 .sorted(Comparator.comparingLong(this::tiendasRecientes).reversed()
                         .thenComparing(producto -> normalizar(producto.nombre)))
-                .limit(100).toList();
+                .limit(150).toList();
         return new Consulta(productos, fuentes(capturas));
     }
 
@@ -273,6 +273,50 @@ final class CatalogoEnVivo {
         String imagen = coincidencias.stream().map(item -> item.precio.urlImagen())
                 .filter(java.util.Objects::nonNull).findFirst().orElse(null);
         return new Producto(primero.nombre(), ordenadas, IdentidadProducto.clave(primero), imagen);
+    }
+
+    /**
+     * Junta en una sola fila el mismo producto publicado por cadenas distintas cuando sus códigos no
+     * coinciden (por ejemplo Líder frente a Jumbo). Solo une grupos sin cadenas en común.
+     */
+    static List<Producto> fusionarEquivalentes(List<Producto> productos) {
+        List<Producto> resultado = new java.util.ArrayList<>(productos);
+        List<EquivalenciaProductos.Firma> firmas = new java.util.ArrayList<>();
+        for (Producto producto : resultado) {
+            firmas.add(EquivalenciaProductos.firma(producto.nombre));
+        }
+        for (int i = 0; i < resultado.size(); i++) {
+            for (int j = i + 1; j < resultado.size(); j++) {
+                Producto a = resultado.get(i);
+                Producto b = resultado.get(j);
+                if (sinCadenasEnComun(a, b) && EquivalenciaProductos.equivalentes(firmas.get(i), firmas.get(j))) {
+                    // Se conserva el nombre y la clave del grupo con más cadenas (normalmente con la marca).
+                    Producto base = b.ofertas.size() > a.ofertas.size() ? b : a;
+                    Producto otro = base == a ? b : a;
+                    List<Oferta> ofertas = new java.util.ArrayList<>(base.ofertas);
+                    ofertas.addAll(otro.ofertas);
+                    ofertas.sort(Comparator.comparing(Oferta::vigente).reversed().thenComparingInt(Oferta::precioClp));
+                    String imagen = base.urlImagen != null ? base.urlImagen : otro.urlImagen;
+                    resultado.set(i, new Producto(base.nombre, List.copyOf(ofertas), base.claveCarrito, imagen));
+                    firmas.set(i, EquivalenciaProductos.firma(base.nombre));
+                    resultado.remove(j);
+                    firmas.remove(j);
+                    j--;
+                }
+            }
+        }
+        return resultado;
+    }
+
+    private static boolean sinCadenasEnComun(Producto a, Producto b) {
+        for (Oferta oferta : a.ofertas) {
+            for (Oferta otra : b.ofertas) {
+                if (oferta.comercio == otra.comercio) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private long tiendasRecientes(Producto producto) {
