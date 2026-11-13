@@ -311,16 +311,34 @@ final class CatalogoEnVivo {
      * coinciden (por ejemplo Líder frente a Jumbo). Solo une grupos sin cadenas en común.
      */
     static List<Producto> fusionarEquivalentes(List<Producto> productos) {
-        List<Producto> resultado = new java.util.ArrayList<>(productos);
-        List<EquivalenciaProductos.Firma> firmas = new java.util.ArrayList<>();
-        for (Producto producto : resultado) {
-            firmas.add(EquivalenciaProductos.firma(producto.nombre));
+        /*
+         * Solo pueden ser el mismo producto los que tienen el mismo tamaño ("1 L", "500 g"), así que se
+         * agrupan primero por tamaño en un HashMap y se compara únicamente dentro de cada grupo. Pasa de
+         * comparar todos contra todos (n²) a grupos pequeños; los productos sin tamaño no se fusionan.
+         */
+        Producto[] vivos = productos.toArray(new Producto[0]);
+        EquivalenciaProductos.Firma[] firmas = new EquivalenciaProductos.Firma[vivos.length];
+        java.util.Map<String, List<Integer>> porMedida = new java.util.HashMap<>();
+        for (int i = 0; i < vivos.length; i++) {
+            firmas[i] = EquivalenciaProductos.firma(vivos[i].nombre);
+            if (firmas[i].medida() != null) {
+                porMedida.computeIfAbsent(firmas[i].medida(), m -> new java.util.ArrayList<>()).add(i);
+            }
         }
-        for (int i = 0; i < resultado.size(); i++) {
-            for (int j = i + 1; j < resultado.size(); j++) {
-                Producto a = resultado.get(i);
-                Producto b = resultado.get(j);
-                if (sinCadenasEnComun(a, b) && EquivalenciaProductos.equivalentes(firmas.get(i), firmas.get(j))) {
+        for (List<Integer> grupo : porMedida.values()) {
+            for (int x = 0; x < grupo.size(); x++) {
+                int i = grupo.get(x);
+                if (vivos[i] == null) {
+                    continue;
+                }
+                for (int y = x + 1; y < grupo.size(); y++) {
+                    int j = grupo.get(y);
+                    Producto a = vivos[i];
+                    Producto b = vivos[j];
+                    if (b == null || !sinCadenasEnComun(a, b)
+                            || !EquivalenciaProductos.equivalentes(firmas[i], firmas[j])) {
+                        continue;
+                    }
                     // Se conserva el nombre y la clave del grupo con más cadenas (normalmente con la marca).
                     Producto base = b.ofertas.size() > a.ofertas.size() ? b : a;
                     Producto otro = base == a ? b : a;
@@ -328,12 +346,16 @@ final class CatalogoEnVivo {
                     ofertas.addAll(otro.ofertas);
                     ofertas.sort(Comparator.comparing(Oferta::vigente).reversed().thenComparingInt(Oferta::precioClp));
                     String imagen = base.urlImagen != null ? base.urlImagen : otro.urlImagen;
-                    resultado.set(i, new Producto(base.nombre, List.copyOf(ofertas), base.claveCarrito, imagen));
-                    firmas.set(i, EquivalenciaProductos.firma(base.nombre));
-                    resultado.remove(j);
-                    firmas.remove(j);
-                    j--;
+                    vivos[i] = new Producto(base.nombre, List.copyOf(ofertas), base.claveCarrito, imagen);
+                    firmas[i] = EquivalenciaProductos.firma(base.nombre);
+                    vivos[j] = null;
                 }
+            }
+        }
+        List<Producto> resultado = new java.util.ArrayList<>(vivos.length);
+        for (Producto producto : vivos) {
+            if (producto != null) {
+                resultado.add(producto);
             }
         }
         return resultado;

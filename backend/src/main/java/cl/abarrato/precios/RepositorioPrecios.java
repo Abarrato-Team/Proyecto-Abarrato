@@ -57,19 +57,30 @@ public class RepositorioPrecios {
     }
 
     List<ObservacionPrecio> buscarCatalogo(String texto) {
+        /*
+         * Primero se buscan por nombre los productos candidatos (usa el índice de trigramas de V7) y
+         * solo de esos se toma la observación más reciente, en vez de ordenar toda la tabla.
+         */
+        String patron = "%" + texto.toLowerCase(java.util.Locale.ROOT)
+                .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
         return jdbc.query("""
                 SELECT comercio, producto_id, ubicacion, nombre, precio_texto, precio_clp, url_fuente, observado_en,
                     clave_comparacion, url_imagen
                 FROM (
-                    SELECT DISTINCT ON (comercio, producto_id) *
-                    FROM observaciones_precio
-                    WHERE ubicacion = 'ONLINE_SIN_UBICACION'
-                    ORDER BY comercio, producto_id, observado_en DESC
+                    SELECT DISTINCT ON (o.comercio, o.producto_id) o.*
+                    FROM observaciones_precio o
+                    JOIN (
+                        SELECT DISTINCT comercio, producto_id
+                        FROM observaciones_precio
+                        WHERE ubicacion = 'ONLINE_SIN_UBICACION' AND lower(nombre) LIKE ? ESCAPE '\\'
+                    ) candidatos USING (comercio, producto_id)
+                    WHERE o.ubicacion = 'ONLINE_SIN_UBICACION'
+                    ORDER BY o.comercio, o.producto_id, o.observado_en DESC
                 ) vigentes
-                WHERE strpos(lower(nombre), lower(?)) > 0
+                WHERE lower(nombre) LIKE ? ESCAPE '\\'
                 ORDER BY lower(nombre), comercio, producto_id
                 LIMIT 60
-                """, this::observacion, texto);
+                """, this::observacion, patron, patron);
     }
 
     record Sucursal(Comercio comercio, String ubicacion, OffsetDateTime ultimaLectura) {}
