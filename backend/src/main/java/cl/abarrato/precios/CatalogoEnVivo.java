@@ -51,7 +51,9 @@ final class CatalogoEnVivo {
     private final ExploradorCatalogos explorador;
     private final Map<Comercio, Captura> cache = new ConcurrentHashMap<>();
     private final Map<Busqueda, CompletableFuture<Captura>> busquedas = new LinkedHashMap<>(16, 0.75f, true);
-    private final ExecutorService descargas = Executors.newFixedThreadPool(Comercio.values().length);
+    // En servidores con poca CPU (como el plan gratis de Render) conviene descargar menos páginas a la vez.
+    private final ExecutorService descargas = Executors.newFixedThreadPool(
+            entero("ABARRATO_DESCARGAS", Comercio.values().length, 1, 16));
 
     CatalogoEnVivo(CapturadorPrecios capturador, ServicioPrecios servicio, ExploradorCatalogos explorador) {
         this.capturador = capturador;
@@ -309,6 +311,16 @@ final class CatalogoEnVivo {
     private static String variantes(String termino) {
         return termino.replaceAll("\\byog(?:h?urts?|ur(?:es)?)\\b", "yogur")
                 .replaceAll("\\bcereales\\b", "cereal");
+    }
+
+    static int entero(String variable, int predeterminado, int minimo, int maximo) {
+        try {
+            String valor = System.getenv(variable);
+            return valor == null || valor.isBlank() ? predeterminado
+                    : Math.max(minimo, Math.min(maximo, Integer.parseInt(valor.strip())));
+        } catch (NumberFormatException error) {
+            return predeterminado;
+        }
     }
 
     @PreDestroy

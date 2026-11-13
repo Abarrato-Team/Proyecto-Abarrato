@@ -16,6 +16,10 @@ final class CapturadorPrecios {
     private static final String FICHA_LIDER_SOPROLE =
             "https://super.lider.cl/ip/leche/leche-entera-natural-1-l/00780290000130";
 
+    /** Segundos de espera por página. En Render gratis conviene subirlo con ABARRATO_TIMEOUT_SEGUNDOS=40. */
+    private static final int TIEMPO_ESPERA_MS =
+            CatalogoEnVivo.entero("ABARRATO_TIMEOUT_SEGUNDOS", 10, 5, 120) * 1000;
+
     private final ExtractorPrecios extractor;
     private final String proxyHost;
     private final int proxyPuerto;
@@ -58,7 +62,7 @@ final class CapturadorPrecios {
         var solicitud = Jsoup.connect(url)
                 .userAgent("AbarratoPriceBot/0.2")
                 .followRedirects(false)
-                .timeout(10_000)
+                .timeout(TIEMPO_ESPERA_MS)
                 .maxBodySize(5 * 1024 * 1024);
         if (!proxyHost.isBlank()) {
             solicitud.proxy(proxyHost, proxyPuerto);
