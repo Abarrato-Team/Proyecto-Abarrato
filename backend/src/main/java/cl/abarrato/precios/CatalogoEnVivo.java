@@ -28,7 +28,7 @@ final class CatalogoEnVivo {
     private static final Duration VIGENCIA = Duration.ofMinutes(2);
     private static final Duration REINTENTO = Duration.ofSeconds(45);
     private static final int MAX_BUSQUEDAS_GUARDADAS = 160;
-    private static final int PAGINAS_BUSQUEDA = entero("ABARRATO_PAGINAS_BUSQUEDA", 2, 1, 4);
+    static final int MAX_PAGINAS = 4;
     private static final List<Comercio> COMERCIOS = List.of(Comercio.values());
     private static final List<String> BUSQUEDAS_PROGRAMADAS = List.of(
             "arroz", "spaghetti", "aceite", "huevos", "pollo", "detergente");
@@ -40,7 +40,12 @@ final class CatalogoEnVivo {
 
     record Fuente(Comercio comercio, String estado, OffsetDateTime observadoEn) {}
 
-    record Consulta(List<Producto> productos, List<Fuente> fuentes) {}
+    /** {@code paginas}: páginas del buscador incluidas; {@code hayMas}: si la app puede pedir la siguiente. */
+    record Consulta(List<Producto> productos, List<Fuente> fuentes, int paginas, boolean hayMas) {
+        Consulta(List<Producto> productos, List<Fuente> fuentes) {
+            this(productos, fuentes, 1, false);
+        }
+    }
 
     private record Captura(Fuente fuente, List<ObservacionPrecio> precios, Instant renovarEn) {}
 
@@ -68,6 +73,15 @@ final class CatalogoEnVivo {
 
     /** Búsqueda en vivo limitada a las cadenas indicadas. */
     Consulta consultar(String consulta, List<Comercio> comercios) {
+        return consultar(consulta, comercios, 1);
+    }
+
+    /**
+     * Búsqueda en vivo de las primeras {@code paginas} páginas de cada buscador. Las páginas ya leídas
+     * se reutilizan durante dos minutos, así que pedir la página 2 solo descarga esa página nueva.
+     */
+    Consulta consultar(String consulta, List<Comercio> comercios, int paginas) {
+        int hasta = Math.max(1, Math.min(MAX_PAGINAS, paginas));
         String termino = normalizar(consulta);
         String[] palabras = variantes(termino)
                 .replaceAll("\\b(aceite|conserva|detergente|fiambre|fideo|helado|huevo|jugo|mantequilla|"
@@ -76,11 +90,13 @@ final class CatalogoEnVivo {
         for (int i = 0; i < palabras.length; i++) {
             palabras[i] = EquivalenciaProductos.raiz(palabras[i]);
         }
-        List<Captura> capturas = conRespaldo(capturarCatalogos(List.of(termino), comercios), palabras);
-        return agrupar(capturas, precio -> {
+        List<Captura> capturas = conRespaldo(capturarCatalogos(List.of(termino), comercios, hasta), palabras);
+        Consulta resultado = agrupar(capturas, precio -> {
             String nombre = variantes(normalizar(precio.nombre()));
             return Arrays.stream(palabras).allMatch(nombre::contains);
         });
+        boolean paginado = comercios.stream().anyMatch(c -> c.urlBusquedaPagina("https://x/search?q=", 2) != null);
+        return new Consulta(resultado.productos(), resultado.fuentes(), hasta, paginado && hasta < MAX_PAGINAS);
     }
 
     /**
@@ -148,7 +164,7 @@ final class CatalogoEnVivo {
                 .stream()
                 .sorted(Comparator.comparingLong(this::tiendasRecientes).reversed()
                         .thenComparing(producto -> normalizar(producto.nombre)))
-                .limit(250).toList();
+                .limit(400).toList();
         return new Consulta(productos, fuentes(capturas));
     }
 
@@ -207,6 +223,10 @@ final class CatalogoEnVivo {
     }
 
     private List<Captura> capturarCatalogos(List<String> consultas, List<Comercio> comercios) {
+        return capturarCatalogos(consultas, comercios, 1);
+    }
+
+    private List<Captura> capturarCatalogos(List<String> consultas, List<Comercio> comercios, int paginas) {
         var pendientes = new java.util.LinkedHashSet<CompletableFuture<Captura>>();
         for (String consulta : consultas) {
             if (!consulta.isBlank()) {
@@ -214,8 +234,8 @@ final class CatalogoEnVivo {
                     String url = comercio.urlBusqueda(consulta);
                     if (url != null && !url.equals(comercio.catalogo())) {
                         pendientes.add(buscar(comercio, url));
-                        // Más resultados: páginas siguientes del buscador (ABARRATO_PAGINAS_BUSQUEDA, 1 a 4).
-                        for (int pagina = 2; pagina <= PAGINAS_BUSQUEDA; pagina++) {
+                        // Páginas siguientes del buscador, solo cuando la app pide "ver más".
+                        for (int pagina = 2; pagina <= paginas; pagina++) {
                             String siguiente = comercio.urlBusquedaPagina(url, pagina);
                             if (siguiente != null) {
                                 pendientes.add(buscar(comercio, siguiente));

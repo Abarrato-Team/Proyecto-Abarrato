@@ -93,7 +93,8 @@ public class ControladorPrecios {
     @GetMapping("/en-vivo")
     public ResponseEntity<CatalogoEnVivo.Consulta> enVivo(@RequestParam String q,
             @RequestParam(required = false) Comercio comercio,
-            @RequestParam(required = false) List<Comercio> comercios) {
+            @RequestParam(required = false) List<Comercio> comercios,
+            @RequestParam(defaultValue = "1") int pagina) {
         String consulta = q.strip();
         if (consulta.length() < 2 || consulta.length() > 80
                 || consulta.codePoints().noneMatch(Character::isLetterOrDigit)) {
@@ -101,7 +102,8 @@ public class ControladorPrecios {
         }
         if (comercio == null && comercios != null && !comercios.isEmpty()) {
             // La app Android consulta solo Jumbo, Santa Isabel, Líder y Del Pedregal.
-            return ResponseEntity.ok(catalogoEnVivo.consultar(consulta, List.copyOf(new java.util.LinkedHashSet<>(comercios))));
+            return ResponseEntity.ok(catalogoEnVivo.consultar(consulta,
+                    List.copyOf(new java.util.LinkedHashSet<>(comercios)), pagina));
         }
         return ResponseEntity.ok(catalogoEnVivo.consultar(consulta, comercio));
     }
