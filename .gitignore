@@ -1,0 +1,13 @@
+**/.gradle/
+**/build/
+**/target/
+**/local.properties
+**/.idea/
+*.iml
+*.jks
+*.keystore
+
+# Secretos: nunca al repositorio
+.env
+*.env
+**/application-local.yml
