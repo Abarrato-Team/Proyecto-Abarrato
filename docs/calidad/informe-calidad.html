@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informe de calidad y seguridad · Abarrato</title>
+<style>
+  :root { --verde:#1c704f; --verde-claro:#e6f2ec; --ambar:#a8650a; --ambar-claro:#fdf3e2; --rojo:#a3302a; --tinta:#1d2621; --gris:#5d6b63; --borde:#d5ddd8; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; color: var(--tinta); max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; line-height: 1.5; font-size: 15px; }
+  header { border-bottom: 3px solid var(--verde); padding-bottom: 16px; margin-bottom: 28px; }
+  header p { margin: 4px 0; color: var(--gris); }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  h2 { font-size: 20px; margin: 36px 0 12px; color: var(--verde); border-bottom: 1px solid var(--borde); padding-bottom: 6px; }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 14px; }
+  th, td { border: 1px solid var(--borde); padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #f3f6f4; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ok, .parcial, .pend { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .ok { background: var(--verde-claro); color: var(--verde); }
+  .parcial { background: var(--ambar-claro); color: var(--ambar); }
+  .pend { background: #f6e5e4; color: var(--rojo); }
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 16px 0; }
+  .tarjeta { border: 1px solid var(--borde); border-radius: 8px; padding: 12px 14px; }
+  .tarjeta b { display: block; font-size: 26px; color: var(--verde); }
+  .tarjeta span { color: var(--gris); font-size: 13px; }
+  .nota { background: var(--ambar-claro); border-left: 4px solid var(--ambar); padding: 10px 14px; margin: 14px 0; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 13px; background: #f3f6f4; padding: 1px 4px; border-radius: 3px; }
+  footer { margin-top: 40px; color: var(--gris); font-size: 13px; border-top: 1px solid var(--borde); padding-top: 12px; }
+  @media print { body { padding: 0; font-size: 12px; } h2 { break-after: avoid; } table, .tarjeta { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Informe de calidad y seguridad · Abarrato</h1>
+  <p>INGT1003 Arquitectura de Desarrollo Móvil y Web · Universidad Mayor · 14 de noviembre de 2026</p>
+  <p>Alcance: app Android (Java), backend Spring Boot 3.5 en Google Cloud Run y PostgreSQL en Neon.</p>
+</header>
+
+<h2>1. Resumen</h2>
+<p>Se evaluó Abarrato con <b>ISO/IEC 25010:2023</b> (calidad del producto), <b>ISO/IEC 27001/27002:2022</b> (codificación segura y perfiles de acceso) y las listas <b>OWASP</b> vigentes: Top 10:2025, API Security Top 10:2023 y Mobile Top 10:2024. Se agregaron pruebas de caja negra, blanca y gris, perfiles de base de datos y cinco correcciones de seguridad.</p>
+<p>La aplicación cumple 7 de las 9 características de calidad y cumple parcialmente las otras 2. No quedan hallazgos de seguridad de severidad alta en el código; los pendientes de prioridad alta son de configuración: suspender el backend antiguo y aplicar los perfiles en Neon.</p>
+<div class="tarjetas">
+  <div class="tarjeta"><b>35 / 40</b><span>subcaracterísticas ISO 25010 cumplidas (7 de 9 características completas)</span></div>
+  <div class="tarjeta"><b>7 / 10</b><span>categorías OWASP Top 10:2025 cumplidas (3 parciales)</span></div>
+  <div class="tarjeta"><b>61</b><span>métodos de prueba en 10 clases</span></div>
+  <div class="tarjeta"><b>5</b><span>hallazgos de seguridad corregidos</span></div>
+</div>
+
+<h2>2. Pruebas (QA)</h2>
+<table>
+  <tr><th>Clase de prueba</th><th>Tipo</th><th class="num">Métodos</th><th>Qué verifica</th><th>Estado</th></tr>
+  <tr><td><code>CajaNegraTest</code></td><td>Caja negra</td><td class="num">6</td><td>Valores límite (1, 2, 80 y 81 caracteres), particiones de equivalencia, tiendas válidas y verbo no permitido</td><td><span class="pend">Ejecutar mvn test</span></td></tr>
+  <tr><td><code>ContratoApiTest</code></td><td>Caja negra</td><td class="num">13</td><td>Códigos de estado y formato único de error en cada ruta</td><td><span class="ok">Aprobada</span></td></tr>
+  <tr><td><code>CajaBlancaTest</code></td><td>Caja blanca</td><td class="num">11</td><td>Los 5 caminos de <code>buscarCatalogo</code>, ramas de <code>validarConsulta</code>, <code>pareceIp</code> y reglas de ofertas</td><td><span class="pend">Ejecutar mvn test</span></td></tr>
+  <tr><td><code>SeguridadTest</code></td><td>Caja blanca</td><td class="num">9</td><td>Límite de peticiones (429), cuerpo máximo (413) y cabeceras</td><td><span class="ok">Aprobada</span></td></tr>
+  <tr><td><code>EquivalenciaProductosTest</code></td><td>Caja blanca</td><td class="num">2 (24 casos)</td><td>Qué nombres son el mismo producto</td><td><span class="ok">Aprobada</span></td></tr>
+  <tr><td><code>ExtractorPreciosTest</code></td><td>Caja blanca</td><td class="num">6</td><td>Lectura de precios y ofertas de cada tienda</td><td><span class="ok">Aprobada</span></td></tr>
+  <tr><td><code>CajaGrisTest</code></td><td>Caja gris</td><td class="num">5</td><td>Inyección SQL, comodines de LIKE, peticiones inválidas sin tocar la base, fotos repetidas, columnas internas</td><td><span class="pend">Ejecutar mvn test</span></td></tr>
+  <tr><td><code>ComparadorCarritoTest</code></td><td>Caja blanca</td><td class="num">3</td><td>Ahorro entre carritos completos, cantidades inválidas, oferta elegida por tienda</td><td><span class="ok">Aprobada</span></td></tr>
+  <tr><td><code>RecolectorPedregalTest</code></td><td>Caja blanca</td><td class="num">2</td><td>Lectura de precios de Del Pedregal</td><td><span class="ok">Aprobada</span></td></tr>
+  <tr><td><code>CatalogoEnVivoTest</code></td><td>Caja gris</td><td class="num">4</td><td>Respaldo con precios guardados y guardado en segundo plano</td><td><span class="ok">Aprobada</span></td></tr>
+</table>
+<p class="nota">Las clases marcadas como "Ejecutar mvn test" son nuevas en esta revisión y todavía no se corren en el PC del equipo. Después de ejecutar <code>mvn test</code>, actualiza esta columna con el resultado real.</p>
+
+<h2>3. Evaluación ISO/IEC 25010:2023</h2>
+<table>
+  <tr><th>Característica</th><th>Estado</th><th>Evidencia</th></tr>
+  <tr><td>Adecuación funcional</td><td><span class="ok">Cumple</span></td><td>8 supermercados, ofertas con condición, "bajó desde ayer", agrupación de productos iguales</td></tr>
+  <tr><td>Eficiencia de desempeño</td><td><span class="ok">Cumple</span></td><td>Primero los precios guardados y luego en vivo; índices B-tree y de trigramas</td></tr>
+  <tr><td>Compatibilidad</td><td><span class="ok">Cumple</span></td><td>API REST JSON versionada (<code>/api/v1</code>) con contrato documentado</td></tr>
+  <tr><td>Capacidad de interacción</td><td><span class="parcial">Parcial</span></td><td>Mensajes claros en español y estados de carga. Falta revisar contraste y lector de pantalla</td></tr>
+  <tr><td>Fiabilidad</td><td><span class="ok">Cumple</span></td><td>Respaldo con la última captura; tarea diaria idempotente</td></tr>
+  <tr><td>Seguridad</td><td><span class="ok">Cumple</span></td><td>Ver las secciones 4 y 5</td></tr>
+  <tr><td>Mantenibilidad</td><td><span class="parcial">Parcial</span></td><td>Capas y pruebas en CI. Todo el backend está en un solo paquete Java</td></tr>
+  <tr><td>Flexibilidad</td><td><span class="ok">Cumple</span></td><td>Docker, configuración por variables, Cloud Run escala de 0 a 2 instancias</td></tr>
+  <tr><td>Seguridad física (Safety)</td><td><span class="ok">Cumple</span></td><td>Riesgo solo económico; se muestra la hora del precio y el enlace a la tienda</td></tr>
+</table>
+<p>Por subcaracterística: <b>35 de 40 cumplidas</b> y 5 parciales (inclusividad, asistencia al usuario, recuperabilidad, responsabilidad y modularidad). El detalle de las 40 está en <code>docs/calidad/01-ISO-25010-calidad.md</code>.</p>
+
+<h2>4. Seguridad · OWASP</h2>
+<h3>OWASP Top 10:2025 (backend)</h3>
+<table>
+  <tr><th>ID</th><th>Categoría</th><th>Estado</th><th>Evidencia o acción</th></tr>
+  <tr><td>A01</td><td>Control de acceso roto (incl. SSRF)</td><td><span class="ok">Cumple</span></td><td>API de solo lectura; token en <code>/actualizar</code>; dominios fijos</td></tr>
+  <tr><td>A02</td><td>Configuración incorrecta</td><td><span class="ok">Cumple</span></td><td>Cabeceras de seguridad, sin trazas, contenedor sin root</td></tr>
+  <tr><td>A03</td><td>Cadena de suministro</td><td><span class="parcial">Parcial</span></td><td>Migrar a Spring Boot 4.x; activar Dependabot</td></tr>
+  <tr><td>A04</td><td>Fallas criptográficas</td><td><span class="ok">Cumple</span></td><td>TLS de punta a punta</td></tr>
+  <tr><td>A05</td><td>Inyección</td><td><span class="ok">Cumple</span></td><td>SQL parametrizado; probado en <code>CajaGrisTest</code></td></tr>
+  <tr><td>A06</td><td>Diseño inseguro</td><td><span class="ok">Cumple</span></td><td>Límites y amenazas analizadas (D11)</td></tr>
+  <tr><td>A07</td><td>Fallas de autenticación</td><td><span class="ok">Cumple</span></td><td>Sin cuentas; token comparado en tiempo constante</td></tr>
+  <tr><td>A08</td><td>Integridad de software o datos</td><td><span class="parcial">Parcial</span></td><td><code>CHECK</code> en la base (V10). Falta firmar el APK de release</td></tr>
+  <tr><td>A09</td><td>Registro y alertas</td><td><span class="parcial">Parcial</span></td><td>IP validada antes del log. Falta una alerta en Cloud Monitoring</td></tr>
+  <tr><td>A10</td><td>Condiciones excepcionales</td><td><span class="ok">Cumple</span></td><td>Manejador central; ante fallas se rechaza</td></tr>
+</table>
+<h3>API Security Top 10:2023 y Mobile Top 10:2024</h3>
+<p>API: cumple 9 de 10. <b>API9 (inventario)</b> está pendiente porque el backend antiguo de Render sigue publicado.<br>
+Mobile: cumple 9 de 10. <b>M7 (protección del binario)</b> es parcial: falta activar R8 en release.</p>
+
+<h3>Hallazgos corregidos en esta revisión</h3>
+<table>
+  <tr><th>#</th><th>Hallazgo</th><th>Referencia</th><th>Corrección</th></tr>
+  <tr><td>1</td><td>Inyección en logs por el encabezado <code>X-Forwarded-For</code></td><td>A09 · CWE-117</td><td><code>LimitePeticiones.pareceIp</code></td></tr>
+  <tr><td>2</td><td>Contenedor ejecutándose como root</td><td>A02 · ISO 8.2</td><td><code>USER abarrato</code> en el Dockerfile</td></tr>
+  <tr><td>3</td><td>Reglas de precios solo en Java</td><td>A08 · ISO 8.28</td><td><code>V10__restricciones_integridad.sql</code></td></tr>
+  <tr><td>4</td><td>Respaldo automático de datos de la app</td><td>Mobile M9</td><td><code>allowBackup="false"</code></td></tr>
+  <tr><td>5</td><td>El servidor usa la cuenta dueña de la base</td><td>A01 · ISO 5.15–5.18, 8.2</td><td>Perfiles en <code>db/roles.sql</code> (falta aplicarlos)</td></tr>
+</table>
+
+<h2>5. ISO/IEC 27002:2022 · Controles aplicados</h2>
+<table>
+  <tr><th>Control</th><th>Aplicación en Abarrato</th></tr>
+  <tr><td>5.15–5.18 Control de acceso, identidades, autenticación y derechos</td><td>Tres perfiles de base de datos con mínimo privilegio; claves solo en Cloud Run</td></tr>
+  <tr><td>8.2 Accesos privilegiados</td><td>La cuenta dueña solo para migraciones; contenedor sin root</td></tr>
+  <tr><td>8.5 Autenticación segura</td><td>SSL hacia Neon; token comparado en tiempo constante</td></tr>
+  <tr><td>8.15 Registro</td><td>Logs de Cloud Run sin datos personales; entradas validadas</td></tr>
+  <tr><td>8.28 Codificación segura</td><td>Validación en el servidor, SQL parametrizado, errores sin detalles, sin secretos en el código</td></tr>
+  <tr><td>8.29 Pruebas de seguridad</td><td><code>SeguridadTest</code>, <code>CajaGrisTest</code>, <code>ContratoApiTest</code></td></tr>
+  <tr><td>8.32 Gestión de cambios</td><td>Migraciones Flyway, registro de decisiones, CI</td></tr>
+</table>
+
+<h2>6. Pendientes priorizados</h2>
+<table>
+  <tr><th>Prioridad</th><th>Tarea</th><th>Referencia</th></tr>
+  <tr><td><span class="pend">Alta</span></td><td>Ejecutar <code>mvn test</code> y desplegar en Cloud Run</td><td>ISO 8.29</td></tr>
+  <tr><td><span class="pend">Alta</span></td><td>Suspender el backend antiguo en Render</td><td>API9</td></tr>
+  <tr><td><span class="pend">Alta</span></td><td>Aplicar <code>db/roles.sql</code> en Neon y usar <code>abarrato_app</code> en Cloud Run</td><td>ISO 8.2 · A01</td></tr>
+  <tr><td><span class="parcial">Media</span></td><td>Migrar a Spring Boot 4.x en una rama aparte</td><td>A03</td></tr>
+  <tr><td><span class="parcial">Media</span></td><td>Alerta en Cloud Monitoring para la tarea diaria y los errores 5xx</td><td>A09</td></tr>
+  <tr><td><span class="parcial">Media</span></td><td>Reemplazar <code>SELECT *</code> por columnas explícitas</td><td>Buenas prácticas de BD</td></tr>
+  <tr><td><span class="ok">Baja</span></td><td>Activar R8 y firmar el APK de release; revisar accesibilidad</td><td>M7 · ISO 25010</td></tr>
+</table>
+
+<h2>7. Uso de inteligencia artificial</h2>
+<p>Se usó Claude (Anthropic) para investigar las versiones vigentes de las normas, redactar las guías de <code>docs/calidad/</code>, escribir las pruebas y las correcciones, y generar este informe. El equipo revisó, compiló y probó el resultado, y es responsable de él. Las normas ISO se citan por número y nombre; los libros se resumen con palabras propias.</p>
+
+<footer>Guías completas: <code>docs/calidad/</code> · Pruebas: <code>backend/src/test/java/cl/abarrato/precios/</code> · Base de datos: <code>db/</code></footer>
+</body>
+</html>

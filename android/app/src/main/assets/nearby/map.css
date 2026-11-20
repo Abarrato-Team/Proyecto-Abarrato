@@ -1,0 +1,42 @@
+html, body, #map {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+body {
+    background: #e6f0e9;
+    color: #11281f;
+    font: 14px system-ui, sans-serif;
+}
+#message {
+    position: absolute;
+    z-index: 1000;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 65%;
+    margin: 0;
+    padding: 6px 10px;
+    border-radius: 9px;
+    background: #fff;
+    text-align: center;
+}
+.shop-pin {
+    display: grid;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #11281f;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 5px #11281f4d;
+}
+.shop-pin.jumbo { background: #0a7a3c; }
+.shop-pin.santa-isabel { background: #c8102e; }
+.shop-pin.lider { background: #0071ce; }
+.shop-pin.del-pedregal { background: #7a2430; }
+.shop-pin.nearest {
+    border: 3px solid #ffcc1a;
+    box-shadow: 0 0 0 3px #11281f55;
+}

@@ -1,0 +1,37 @@
+server:
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  error:
+    # Nunca enviar al cliente mensajes internos ni trazas de error.
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+spring:
+  application:
+    name: abarrato-backend
+  datasource:
+    url: ${ABARRATO_DB_URL}
+    username: ${ABARRATO_DB_USER}
+    password: ${ABARRATO_DB_PASSWORD}
+  flyway:
+    user: ${ABARRATO_MIGRATION_USER:${ABARRATO_DB_USER}}
+    password: ${ABARRATO_MIGRATION_PASSWORD:${ABARRATO_DB_PASSWORD}}
+abarrato:
+  comparacion:
+    vigencia-web: ${ABARRATO_MAX_WEB_AGE:PT15M}
+    vigencia-sucursal: ${ABARRATO_MAX_BRANCH_AGE:PT24H}
+  tarea:
+    # Clave que Cloud Scheduler envía en X-Abarrato-Token (mínimo 16 caracteres). Vacía = ruta desactivada.
+    token: ${ABARRATO_TOKEN_TAREA:}
+    # Minutos que dura el recorrido diario (Cloud Scheduler corta a los 30).
+    minutos: ${ABARRATO_TAREA_MINUTOS:25}
+  seguridad:
+    # Peticiones por minuto. "Costosas" = las que visitan las páginas de los supermercados.
+    por-cliente: ${ABARRATO_LIMITE_POR_CLIENTE:300}
+    costosas-por-cliente: ${ABARRATO_LIMITE_BUSQUEDAS:60}
+    costosas-total: ${ABARRATO_LIMITE_TOTAL:600}
+  recoleccion:
+    habilitada: ${ABARRATO_SCRAPE_ENABLED:true}
+    cron: ${ABARRATO_SCRAPE_CRON:0 0 */3 * * *}
+    proxy-host: ${ABARRATO_PROXY_HOST:}
+    proxy-puerto: ${ABARRATO_PROXY_PORT:0}
