@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="forest">#11281F</color>
+    <color name="forest_highlight">#DCE8E0</color>
+    <color name="ink">#4B6256</color>
+    <color name="paper">#EFF0E9</color>
+    <color name="accent">#FFD125</color>
+    <color name="mint">#E6F0E9</color>
+    <color name="amber">#FFF5D4</color>
+</resources>

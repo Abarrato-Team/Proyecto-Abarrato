@@ -1,0 +1,58 @@
+{
+  "folders": [
+    {
+      "name": "Abarrato",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "files.exclude": {
+      "**/build": true,
+      "**/.gradle": true,
+      "**/target": true
+    }
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Compilar APK (servidor en Google Cloud)",
+        "type": "shell",
+        "command": "if (!(Test-Path local.properties)) { Set-Content local.properties (\"sdk.dir=\" + ($env:LOCALAPPDATA -replace '\\\\','/') + \"/Android/Sdk\") }; .\\gradlew.bat :app:assembleDebug -PabarratoPreciosUrl=https://abarrato-backend-850689460369.southamerica-west1.run.app; if ($?) { explorer.exe app\\build\\outputs\\apk\\debug }",
+        "options": {
+          "cwd": "${workspaceFolder}/android",
+          "shell": {
+            "executable": "powershell.exe",
+            "args": [
+              "-NoProfile",
+              "-Command"
+            ]
+          }
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Compilar APK (servidor en Render)",
+        "type": "shell",
+        "command": "if (!(Test-Path local.properties)) { Set-Content local.properties (\"sdk.dir=\" + ($env:LOCALAPPDATA -replace '\\\\','/') + \"/Android/Sdk\") }; .\\gradlew.bat :app:assembleDebug -PabarratoPreciosUrl=https://abarrato-backend.onrender.com; if ($?) { explorer.exe app\\build\\outputs\\apk\\debug }",
+        "options": {
+          "cwd": "${workspaceFolder}/android",
+          "shell": {
+            "executable": "powershell.exe",
+            "args": [
+              "-NoProfile",
+              "-Command"
+            ]
+          }
+        },
+        "group": "build",
+        "problemMatcher": []
+      }
+    ]
+  }
+}

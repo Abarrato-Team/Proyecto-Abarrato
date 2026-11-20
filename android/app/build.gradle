@@ -1,0 +1,43 @@
+plugins {
+    id 'com.android.application' version '8.13.2'
+}
+
+def preciosApi = providers.gradleProperty('abarratoPreciosUrl')
+
+android {
+    namespace = 'com.abarrato.app'
+    compileSdk = 35
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField 'String', 'PRECIOS_API_URL',
+                    groovy.json.JsonOutput.toJson(preciosApi.getOrElse('http://10.0.2.2:8080'))
+        }
+        release {
+            buildConfigField 'String', 'PRECIOS_API_URL',
+                    groovy.json.JsonOutput.toJson(preciosApi.getOrElse(''))
+        }
+    }
+
+    defaultConfig {
+        applicationId = 'com.abarrato.app'
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = '0.1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Pruebas unitarias que corren en el computador, sin emulador: .\gradlew.bat :app:testDebugUnitTest
+    testImplementation 'junit:junit:4.13.2'
+}
