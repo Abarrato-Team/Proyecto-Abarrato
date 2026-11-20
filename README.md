@@ -8,11 +8,11 @@ Proyecto semestral de INGT1003 Arquitectura de Desarrollo Móvil y Web · Univer
 
 ## Integrantes
 
-| Nombre | Rol |
-|---|---|
-| Valentina *(completar apellido)* | *(completar)* |
-| *(completar)* | *(completar)* |
-
+| Nombre | Rol | 
+|---|---|---|
+| Valentina Lara | Prototipador | [@seesawgi](https://github.com/seesawgi) |
+| Matías Quezada | Documentador | [@schulermitangst](https://github.com/Schulermitangst) |
+|Lucas Lara | Administrador | [@lucaslarafuentes-dotcom](https://github.com/lucaslarafuentes-dotcom)|
 ## Qué hace
 
 - Busca un producto y muestra su precio en Jumbo, Santa Isabel, Líder, Unimarc, Tottus, Alvi, Cugat y Del Pedregal, con foto, ofertas ("Con Club Unimarc", "Llevando 3 o más") y si **bajó o subió desde ayer**.
