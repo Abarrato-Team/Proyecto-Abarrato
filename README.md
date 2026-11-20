@@ -8,7 +8,7 @@ Proyecto semestral de INGT1003 Arquitectura de Desarrollo Móvil y Web · Univer
 
 ## Integrantes
 
-| Nombre | Rol | 
+| Nombre | Rol | Github personal | 
 |---|---|---|
 | Valentina Lara | Prototipador | [@seesawgi](https://github.com/seesawgi) |
 | Matías Quezada | Documentador | [@schulermitangst](https://github.com/Schulermitangst) |
