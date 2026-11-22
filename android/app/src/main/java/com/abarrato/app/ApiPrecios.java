@@ -137,7 +137,7 @@ final class ApiPrecios {
     }
 
     /**
-     * Despierta el servidor (Render duerme tras 15 min sin uso) apenas se abre la app, en segundo
+     * Despierta el servidor (Cloud Run duerme tras 15 min sin uso) apenas se abre la app, en segundo
      * plano: mientras el usuario mira el inicio, el servidor ya se está encendiendo.
      */
     static void despertar() {
