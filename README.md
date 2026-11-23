@@ -8,8 +8,8 @@ Proyecto semestral de INGT1003 Arquitectura de Desarrollo Móvil y Web · Univer
 
 ## Link a Video de youtube.
 <div align="center">
-  <a href="https://youtube.com">
-    <img src="https://jorgenkh.no" alt="Video promocional Abarrato" width="600">
+  <a href="https://www.youtube.com/watch?v=DWLjvuHiKi8">
+    <img src="https://img.youtube.com/vi/DWLjvuHiKi8/hqdefault.jpg" alt="Video promocional Abarrato" width="600">
   </a>
 </div>
 
