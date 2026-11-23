@@ -6,7 +6,10 @@
 
 Proyecto semestral de INGT1003 Arquitectura de Desarrollo Móvil y Web · Universidad Mayor · 2.º semestre 2026.
 
-## Integrantes
+## Link a Video de youtube.
+[![Video promocional Abarrato](https://youtube.com)](https://youtube.com)
+
+ Integrantes
 
 | Nombre | Rol | Github personal | 
 |---|---|---|
